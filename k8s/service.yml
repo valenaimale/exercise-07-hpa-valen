@@ -1,1 +1,15 @@
-# TODO: Service exposing port 8080
+apiVersion: v1       # version de la API de K8s para recursos basicos como Services
+kind: Service        # tipo de recurso: un Service expone pods en la red del cluster
+metadata:
+  name: nodes-api-service  # nombre del Service — otros pods lo usan como hostname DNS
+
+spec:
+  selector:
+    app: nodes-api   # redirige el trafico a los pods que tengan esta etiqueta (los del Deployment)
+
+  ports:
+    - protocol: TCP        # protocolo de red (TCP es el estandar para HTTP)
+      port: 8080           # puerto por el que otros pods acceden a este Service
+      targetPort: 8080     # puerto del contenedor al que el Service redirige el trafico
+
+  type: ClusterIP    # tipo ClusterIP: el Service solo es accesible DENTRO del cluster (sin exponer al exterior)

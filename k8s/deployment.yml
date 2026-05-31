@@ -1,1 +1,39 @@
-# TODO: Deployment with 2 replicas, resource requests/limits
+apiVersion: apps/v1        # version de la API de K8s que soporta Deployments
+kind: Deployment           # tipo de recurso: un Deployment gestiona un conjunto de pods
+metadata:
+  name: nodes-api          # nombre con el que K8s identifica este Deployment
+  labels:
+    app: nodes-api         # etiqueta del Deployment (util para filtrar con kubectl)
+
+spec:
+  replicas: 2              # cantidad inicial de pods que K8s va a mantener corriendo
+
+  selector:
+    matchLabels:
+      app: nodes-api       # el Deployment controla los pods que tengan ESTA etiqueta
+
+  template:                # plantilla que define como se crea cada pod
+    metadata:
+      labels:
+        app: nodes-api     # etiqueta que se le pone a cada pod creado — debe coincidir con selector
+
+    spec:
+      containers:
+        - name: nodes-api          # nombre del contenedor dentro del pod
+          image: nodes-api:latest  # imagen Docker a usar (construida con el Dockerfile del proyecto)
+          imagePullPolicy: IfNotPresent  # si la imagen ya esta en el nodo, no la descarga de nuevo
+
+          ports:
+            - containerPort: 8080  # puerto que el contenedor expone (el mismo que usa uvicorn)
+
+          env:
+            - name: DATABASE_URL   # variable de entorno que lee src/database.py
+              value: "postgresql://postgres:postgres@postgres:5432/nodesdb"  # apunta al Service de Postgres en el cluster
+
+          resources:
+            requests:              # recursos MINIMOS garantizados al contenedor
+              cpu: "100m"          # 100 millicores = 0.1 CPU (1 CPU = 1000m)
+              memory: "128Mi"      # 128 mebibytes de RAM garantizados
+            limits:                # recursos MAXIMOS que el contenedor puede usar
+              cpu: "500m"          # si supera 500m de CPU, K8s lo throttlea
+              memory: "256Mi"      # si supera 256Mi de RAM, K8s mata el pod (OOMKill)

@@ -1,1 +1,21 @@
-# TODO: HorizontalPodAutoscaler targeting CPU > 50%, min 2, max 8 replicas
+apiVersion: autoscaling/v2   # version de la API — v2 permite multiples metricas (CPU, memoria, custom)
+kind: HorizontalPodAutoscaler  # tipo de recurso: el autoescalador horizontal de pods
+metadata:
+  name: nodes-api-hpa          # nombre con el que K8s identifica este HPA
+
+spec:
+  scaleTargetRef:              # a que recurso apunta el HPA para escalar
+    apiVersion: apps/v1        # version de la API del recurso objetivo
+    kind: Deployment           # tipo del recurso objetivo
+    name: nodes-api            # nombre del Deployment que va a escalar (debe coincidir con deployment.yml)
+
+  minReplicas: 2               # cantidad MINIMA de pods — nunca va a bajar de 2
+  maxReplicas: 8               # cantidad MAXIMA de pods — nunca va a subir de 8
+
+  metrics:                     # lista de metricas que el HPA monitorea para decidir si escalar
+    - type: Resource           # escalar basado en el consumo de un recurso del sistema
+      resource:
+        name: cpu              # el recurso a monitorear es CPU
+        target:
+          type: Utilization    # comparar en base a porcentaje de uso relativo a los requests
+          averageUtilization: 50  # si el promedio de CPU de todos los pods supera el 50%, agrega pods
